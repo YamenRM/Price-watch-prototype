@@ -8,17 +8,17 @@ st.markdown("---")
 
 # 1. Generate a realistic dataset history
 @st.cache_data(ttl=60) 
-def generate_market_history(base_price, volatility=0.15, outliers_count=3):
+def generate_market_history(base_price, volatility=0.20, outliers_count=4):
     # Generate 30 normal reports 
-    normal_reports = np.random.normal(loc=base_price, scale=base_price * volatility, size=30)
+    normal_reports = np.random.normal(loc=base_price, scale=base_price * volatility, size=40)
     
     # Inject high/low anomalies
-    high_outliers = np.random.uniform(base_price * 1.8, base_price * 2.2, size=outliers_count)
-    low_outliers = np.random.uniform(base_price * 0.1, base_price * 0.3, size=outliers_count // 2)
+    high_outliers = np.random.uniform(base_price * 1.8, base_price * 2.0, size=outliers_count)
+    low_outliers = np.random.uniform(base_price * 0.3, base_price * 0.6, size=outliers_count // 2)
     
     all_reports = np.concatenate([normal_reports, high_outliers, low_outliers])
     np.random.shuffle(all_reports) 
-    return np.clip(all_reports, 0.1, None) 
+    return np.clip(all_reports, 1.0, None) 
 
 # 2. Product Configuration
 products = {
@@ -51,7 +51,7 @@ with col_setup:
 with col_visuals:
     st.header("تمثيل البيانات")
     df = pd.DataFrame(history, columns=["السعر"])
-    st.bar_chart(df["السعر"].value_counts().sort_index())
+    st.line_chart(df["السعر"])
     st.caption("تمثيل لاخر 55 إدخالاً.")
 
 # 3. Verification Logic
