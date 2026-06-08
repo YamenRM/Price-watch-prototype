@@ -3,26 +3,24 @@ import numpy as np
 import pandas as pd
 
 st.set_page_config(page_title="Gaza Price Watch - ML Anomaly Engine", page_icon="📈", layout="wide")
-
-# Title
 st.title("نظام التحقق")
 st.markdown("---")
 
-# 1. HELPER: Generate a realistic, volatile dataset history
-@st.cache_data(ttl=60) # Caches data for 1 minute so it doesn't refresh on every click
+# 1. Generate a realistic dataset history
+@st.cache_data(ttl=60) 
 def generate_market_history(base_price, volatility=0.15, outliers_count=3):
-    # Generate 30 normal reports using a Gaussian distribution
+    # Generate 30 normal reports 
     normal_reports = np.random.normal(loc=base_price, scale=base_price * volatility, size=30)
     
-    # Inject a few intentional high/low anomalies (trolls/scalpers)
+    # Inject high/low anomalies
     high_outliers = np.random.uniform(base_price * 1.8, base_price * 2.2, size=outliers_count)
     low_outliers = np.random.uniform(base_price * 0.1, base_price * 0.3, size=outliers_count // 2)
     
     all_reports = np.concatenate([normal_reports, high_outliers, low_outliers])
-    np.random.shuffle(all_reports) # Mix them up chronologically
-    return np.clip(all_reports, 0.1, None) # Ensure no negative prices
+    np.random.shuffle(all_reports) 
+    return np.clip(all_reports, 0.1, None) 
 
-# 2. Select Product Configuration
+# 2. Product Configuration
 products = {
     "طحين - 25 كغ": 60.0,
     "زيت طهي - 1 لتر": 17.0,
@@ -36,11 +34,11 @@ with col_setup:
     selected_prod = st.selectbox("اختار المنتج", list(products.keys()))
     user_status = st.selectbox("حالة المستخدم", ["Guest Profile", "Registered User", "Vetted Trusted User"])
     
-    # Generate history based on selection
+
     base = products[selected_prod]
     history = generate_market_history(base)
     
-    # Calculate Real-time Metrics from our "Self-Made Dataset"
+
     market_mean = np.mean(history)
     market_std = np.std(history)
     
@@ -52,21 +50,17 @@ with col_setup:
 
 with col_visuals:
     st.header("تمثيل البيانات")
-    
-    # Plot the histogram of our self-made dataset
     df = pd.DataFrame(history, columns=["السعر"])
     st.bar_chart(df["السعر"].value_counts().sort_index())
     st.caption("تمثيل لاخر 55 إدخالاً.")
 
-# 3. ML / Statistical Verification Logic
+# 3. Verification Logic
 if st.button("مقارنة السعر المبلغ عنه مع بيانات السوق", type="primary"):
     st.markdown("### المقارنة")
     
-    # Calculate Z-score
     z_score = (reported_price - market_mean) / market_std
     st.write(f"• Calculated Z-Score: `{z_score:.2f}`")
     
-    # Threshold rules based on standard deviations
     if abs(z_score) <= 0.5:
         st.success("✅ .مقبول** السعر ضمن النطاق الطبيعي للتقلبات السوقية**")
     elif abs(z_score) <= 1 and user_status == "Vetted Trusted User":
